@@ -272,6 +272,7 @@ function App(): React.JSX.Element {
         </Div>
         
         <View>
+        <Text style={{ color: '#000'}}>{isArabic ? 'المنتج' : 'Product'}</Text>
           <TextInput
             value={proudct}
             placeholder={isArabic ? "المنتج" : "Product"}
