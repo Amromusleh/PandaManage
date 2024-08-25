@@ -23,7 +23,7 @@ type FullData = {
 
 I18nManager.allowRTL(true); 
 
-// change every color
+// change every color//done
 // background 
 // change the app name
 function App(): React.JSX.Element {
