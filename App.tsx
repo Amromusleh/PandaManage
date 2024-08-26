@@ -23,9 +23,6 @@ type FullData = {
 
 I18nManager.allowRTL(true); 
 
-// change every color//done
-// background 
-// change the app name
 function App(): React.JSX.Element {
   const [fullData, setFullData] = useState<FullData[]>([]);
   const [proudct, setProudct] = useState<string>("");
@@ -398,7 +395,7 @@ function App(): React.JSX.Element {
                   [
                     {
                       text: isArabic? "أحذف" : "Delete" ,
-                      onPress: () => {setFullData([]);}
+                      onPress: () => {setFullData([]), setMoneyAmount(0);}
                     },
                     {
                       text: isArabic? "غير متأكد" : "Not sure",
