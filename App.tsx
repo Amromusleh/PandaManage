@@ -236,9 +236,9 @@ function App(): React.JSX.Element {
         borderBottomColor="gray200"
         alignment="center"
         prefix={
-          <MButton bg="#fff" onPress={showOnlyList}>
-            <Icon name="add-circle-outline" fontFamily="MaterialIcons" color='#444' fontSize="2xl" />
-          </MButton>
+            <MButton bg="#fff" onPress={showOnlyList}>
+              <Icon name="add-circle-outline" fontFamily="MaterialIcons" color='#444' fontSize="2xl" />
+            </MButton>
         }
         suffix={
           <MButton bg="#fff" onPress={lang}>
@@ -300,15 +300,31 @@ function App(): React.JSX.Element {
           <MButton block={true} onPress={fullDataEnter} mt={20}>{isArabic ? 'إضافة منتج' : 'Add Product'}</MButton>
         </View>
       </Modal>
-      
+
       <FlatList
         data={fullData}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item, index }) => (
           <View style={styles.card}>
-            <TouchableOpacity onPress={() => toggleEdit(index)} style={styles.editButton}>
-              <Text style={styles.editButtonText}>{tag === index ? (isArabic ? 'تم' : 'Done') : (isArabic ? 'تعديل' : 'Edit')}</Text>
-            </TouchableOpacity>
+          <MButton
+            onPress={() => toggleEdit(index)}
+            style={{
+              backgroundColor: '#3282ce',
+              borderColor: '#3282ce',
+              padding: 0,
+              margin: 0,
+              width:22,
+              height:22,
+              borderRadius: 60
+            }}
+          >
+            <Icon
+              name="edit"
+              fontFamily="FontAwesome"
+              color={tag === index ? '#333' : '#fff'}  
+              fontSize="4xl"  
+            />
+          </MButton>
             <Div flex={1} justifyContent='center' alignItems='center' style={[styles.centeredContainer ]}>
               <Text style={styles.productName}>{item.proudct}</Text>
               <Text style={styles.productDetails}>{isArabic ? 'عدد: ' : 'Number: '} {item.numberProudcts}</Text>
@@ -377,9 +393,21 @@ function App(): React.JSX.Element {
             <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#000' }}>$ {remainingMoney}</Text>
           </Div>
         </Div>
-
-        <TouchableOpacity onPress={subtractFromMoney} style={styles.subtractButton}>
-          <Text style={styles.subtractButtonText}>{isArabic ? 'طرح يدوي للمال' : 'manual subtract'}</Text>
+        <TouchableOpacity onPress={() => {
+                Alert.alert( isArabic? "تحذير": "WARNING", isArabic? " هل أنت متأكد من رغبتك في حذف جميع البيانات المدخلة هذا الحذف تام ولا يمكن التراجع عنه ": "Are you sure you want to delete All the items ?",
+                  [
+                    {
+                      text: isArabic? "أحذف" : "Delete" ,
+                      onPress: () => {setFullData([]);}
+                    },
+                    {
+                      text: isArabic? "غير متأكد" : "Not sure",
+                      onPress: () => console.log( isArabic? "تمام" : "sure")
+                    }
+                  ]
+                );
+        }} style={styles.subtractButton}>
+          <Text style={styles.subtractButtonText}>{isArabic ? 'حذف لكل البيانات' : 'Delete all'}</Text>
         </TouchableOpacity>
       </Div>
     </SafeAreaView>
@@ -511,7 +539,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   subtractButton: {
-    backgroundColor: '#ff6347',
+    backgroundColor: '#7A2020',
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
