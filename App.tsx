@@ -28,9 +28,9 @@ function App(): React.JSX.Element {
   const [proudct, setProudct] = useState<string>("");
   const [numberProudcts, setNumberProudect] = useState<number>(0);
   const [price, setPrice] = useState<number>(0);
-  const [tag, setTag] = useState<number | null>(null);
   const [moneyAmount, setMoneyAmount] = useState<number>(0); 
   const [totalSum, setTotalSum] = useState<number>(0);
+  const [tag, setTag] = useState<number | null>(null);
   const [remainingMoney, setRemainingMoney] = useState<number | null>(null); 
   const [isArabic, setIsArabic] = useState<boolean>(false);
   const [onlyList, setOnlyList] = useState<boolean>(false);
@@ -75,13 +75,11 @@ function App(): React.JSX.Element {
       Alert.alert("Error", "Product name cannot be empty");
       return;
     }
-
     const newProduct: FullData = { proudct, numberProudcts, price, multi: price * numberProudcts };
     setFullData((prevData) => [...prevData, newProduct]);
     clear();
     setOnlyList(false);
   }
-
 
   function clear() {
     setPrice(0);
@@ -328,10 +326,8 @@ function App(): React.JSX.Element {
               <Text style={styles.productDetails}>{isArabic ? 'سعر: ' : 'Price: $'}{item.price}</Text>
               <Text style={styles.productDetails}>{isArabic ? 'الإجمالي: ' : 'Total: $'}{item.multi}</Text>
 
-
               {tag === index && (
                 <View>
-                  
                   <Div ><View><Text style={{ color: '#000'}}>  {isArabic?"عدد المنتجات المشترية" : "Number Of Proudcts"}</Text></View></Div>
                   <Div flexDir='row' p={10} >
                     <TouchableOpacity onPress={() => incrementProductQuantity(index)} style={styles.incrementButton}>
@@ -391,19 +387,19 @@ function App(): React.JSX.Element {
           </Div>
         </Div>
         <TouchableOpacity onPress={() => {
-                Alert.alert( isArabic? "تحذير": "WARNING", isArabic? " هل أنت متأكد من رغبتك في حذف جميع البيانات المدخلة هذا الحذف تام ولا يمكن التراجع عنه ": "Are you sure you want to delete All the items ?",
-                  [
-                    {
-                      text: isArabic? "أحذف" : "Delete" ,
-                      onPress: () => {setFullData([]), setMoneyAmount(0);}
-                    },
-                    {
-                      text: isArabic? "غير متأكد" : "Not sure",
-                      onPress: () => console.log( isArabic? "تمام" : "sure")
-                    }
-                  ]
-                );
-        }} style={styles.subtractButton}>
+          Alert.alert( isArabic? "تحذير": "WARNING", isArabic? " هل أنت متأكد من رغبتك في حذف جميع البيانات المدخلة هذا الحذف تام ولا يمكن التراجع عنه ": "Are you sure you want to delete All the items ?",
+            [
+              {
+                text: isArabic? "أحذف" : "Delete" ,
+                onPress: () => {setFullData([]), setMoneyAmount(0), setNumberProudect(0), setPrice(0), setProudct('');}
+              },
+              {
+                text: isArabic? "غير متأكد" : "Not sure",
+                onPress: () => console.log( isArabic? "تمام" : "sure")
+              }
+            ]
+          );
+          }} style={styles.subtractButton}>
           <Text style={styles.subtractButtonText}>{isArabic ? 'حذف لكل البيانات' : 'Delete all'}</Text>
         </TouchableOpacity>
       </Div>
