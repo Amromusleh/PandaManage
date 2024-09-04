@@ -21,7 +21,6 @@ type FullData = {
   multi?: number;
 };
 
-I18nManager.allowRTL(true); 
 
 function App(): React.JSX.Element {
   const [fullData, setFullData] = useState<FullData[]>([]);
@@ -169,21 +168,39 @@ function App(): React.JSX.Element {
     } else setOnlyList(false)
   }
 
-  const handlePriceChange = (index:number, text:string) => {
-    const numericValue = text.replace(/[^0-9]/g, '') || '0';
-    updateProduct(index, "price", Number(numericValue));
+  function sanitizeNumericInput(text: string): number {
+    const sanitizedText = text.replace(/[^0-9.]/g, '');
+  
+    const cleanText = sanitizedText.split('.').slice(0, 2).join('.');
+  
+    return parseFloat(cleanText) || 0;
+  }
+  
+
+  const handlePriceChange = (index: number, text: string) => {
+    const numericValue = sanitizeNumericInput(text);
+    updateProduct(index, 'price', numericValue);
+  };
+  
+  const handleMoneyAmountChange = (text: string) => {
+    const numericValue = sanitizeNumericInput(text);
+    setMoneyAmount(numericValue);
+  };
+  
+  const handleProductNumberChange = (index: number, text: string) => {
+    const numericValue = sanitizeNumericInput(text);
+    updateProduct(index, 'numberProudcts', numericValue);
   };
 
-  const handleMoneyAmountChange = (text:string) => {
-    const numericValue = text.replace(/[^0-9]/g, '') || '0';
-    setMoneyAmount(Number(numericValue));
-  };
-
-  const handleProductNumberChange = (index:number, text:string) => {
-    const numericValue = text.replace(/[^0-9]/g, '') || '0';
-    updateProduct(index, "numberProudcts", Number(numericValue));
-  };
-
+  function fullDeleteButton() {
+    setFullData([])
+    setMoneyAmount(0)
+    setNumberProudect(0)
+    setPrice(0)
+    setProudct('');
+    //here
+  }
+  
   async function saveData() {
     try {
       await AsyncStorage.setItem('moneyAmount', moneyAmount.toString());
@@ -277,9 +294,10 @@ function App(): React.JSX.Element {
           <Text style={{ color: '#000'}}>{isArabic ? 'عدد المنتجات' : 'Number Of Products'}</Text>
           <TextInput
             value={numberProudcts.toString()}
+            onChangeText={(text) => setNumberProudect(Number(text))}
+
             placeholder={isArabic ? "عدد المنتجات" : "Number of Products"}
             keyboardType="numeric"
-            onChangeText={(text) => setNumberProudect(Number(text))}
             style={[styles.input, isArabic && styles.arabicInput]}
           />
           <Text style={{ color: '#000'}}>{isArabic ? 'السعر' : 'Price'}</Text>
@@ -391,7 +409,13 @@ function App(): React.JSX.Element {
             [
               {
                 text: isArabic? "أحذف" : "Delete" ,
-                onPress: () => {setFullData([]), setMoneyAmount(0), setNumberProudect(0), setPrice(0), setProudct('');}
+                onPress: () => {    
+                  setFullData([])
+                  setMoneyAmount(0)
+                  setNumberProudect(0)
+                  setPrice(0)
+                  setProudct('');
+                }
               },
               {
                 text: isArabic? "غير متأكد" : "Not sure",
