@@ -41,8 +41,9 @@ function App(): React.JSX.Element {
   const [remainingMoney, setRemainingMoney] = useState<number | null>(null); 
   const [isArabic, setIsArabic] = useState<boolean>(false);
   const [onlyList, setOnlyList] = useState<boolean>(false);
-  const [history, setHistory] = useState<history[]>([]);
-  
+  const [showHistoryToggle, setShowHistoryToggle] = useState<boolean>(false);
+  const [historyData, setHistoryData] = useState<history[]>([]);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -180,6 +181,12 @@ function App(): React.JSX.Element {
     } else setOnlyList(false)
   }
 
+  function showHistory() {
+
+    if (showHistoryToggle === false) {
+      setShowHistoryToggle(true)
+    } else setShowHistoryToggle(false)
+  }
   function sanitizeNumericInput(text: string): number {
     const sanitizedText = text.replace(/[^0-9.]/g, '');
   
@@ -242,10 +249,13 @@ function App(): React.JSX.Element {
     }
   }
 
+
+
    async function saveInHistory() {
     const historyStorage = await AsyncStorage.getItem('history')
-    const historyList = historyStorage ? JSON.parse(historyStorage) : []
-    const historyData:history = {
+    let historyList = historyStorage ? JSON.parse(historyStorage) : []
+
+    const historyPush:history = {
       fullData,
       moneyAmount,
       numberProudcts,
@@ -254,9 +264,7 @@ function App(): React.JSX.Element {
       date: new Date() 
     }
 
-    historyList.push(historyData)
-
-    await AsyncStorage.setItem('history', JSON.stringify(historyData))
+    await AsyncStorage.setItem('history', JSON.stringify(historyPush))
   }
 
   return (
@@ -267,9 +275,14 @@ function App(): React.JSX.Element {
         borderBottomColor="gray200"
         alignment="center"
         prefix={
+          <View>
             <MButton bg="#fff" onPress={showOnlyList}>
               <Icon name="add-circle-outline" fontFamily="MaterialIcons" color='#444' fontSize="2xl" />
             </MButton>
+            <MButton bg="#fff" onPress={showHistory}>
+              <Icon name="add-circle-outline" fontFamily="MaterialIcons" color='#444' fontSize="2xl" />
+            </MButton>
+          </View>
         }
         suffix={
           <MButton bg="#fff" onPress={lang}>
@@ -279,6 +292,31 @@ function App(): React.JSX.Element {
       >
         {isArabic ? 'إدارة المنتجات' : 'Product Management'}
       </Header>
+      <Modal 
+        isVisible={showHistoryToggle}
+        swipeDirection={'down'}
+        p={20}
+        onBackdropPress={() => setShowHistoryToggle(false)}
+        onSwipeComplete={() => setShowHistoryToggle(false)}
+      >
+        <View>
+          <FlatList
+          data={historyData}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({item}) => (
+            <View >
+            <Text>Product: {item.proudct}</Text>
+            <Text>Amount: {item.moneyAmount}</Text>
+            <Text>Number of Products: {item.numberProudcts}</Text>
+            <Text>Price: {item.price}</Text>
+            <Text>Date: {new Date(item.date).toLocaleString()}</Text>
+          </View>
+          )}
+          />
+          </View>
+          <Button title="Close" onPress={() => setShowHistoryToggle(false)} />
+
+      </Modal>
 
       <Modal
         isVisible={onlyList}
