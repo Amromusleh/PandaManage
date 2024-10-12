@@ -21,6 +21,14 @@ type FullData = {
   multi?: number;
 };
 
+type history = {
+  fullData : FullData[]
+  moneyAmount : number
+  numberProudcts : number
+  price : number
+  proudct :string
+  date : Date
+}
 
 function App(): React.JSX.Element {
   const [fullData, setFullData] = useState<FullData[]>([]);
@@ -33,6 +41,7 @@ function App(): React.JSX.Element {
   const [remainingMoney, setRemainingMoney] = useState<number | null>(null); 
   const [isArabic, setIsArabic] = useState<boolean>(false);
   const [onlyList, setOnlyList] = useState<boolean>(false);
+  const [history, setHistory] = useState<history[]>([]);
   
   useEffect(() => {
     loadData();
@@ -135,7 +144,10 @@ function App(): React.JSX.Element {
         [
           {
             text: isArabic? "أحذف" : "Delete" ,
-            onPress: () => {setFullData((prevData) => prevData.filter((_, idx) => idx !== index));}
+            onPress: async () => {
+              await saveInHistory()
+              setFullData((prevData) => prevData.filter((_, idx) => idx !== index));
+            }
           },
           {
             text: isArabic? "غير متأكد" : "Not sure",
@@ -160,7 +172,7 @@ function App(): React.JSX.Element {
       setIsArabic(true)
     } else setIsArabic(false)
   }
-  
+
   function showOnlyList() {
 
     if (onlyList === false) {
@@ -176,7 +188,6 @@ function App(): React.JSX.Element {
     return parseFloat(cleanText) || 0;
   }
   
-
   const handlePriceChange = (index: number, text: string) => {
     const numericValue = sanitizeNumericInput(text);
     updateProduct(index, 'price', numericValue);
@@ -192,15 +203,6 @@ function App(): React.JSX.Element {
     updateProduct(index, 'numberProudcts', numericValue);
   };
 
-  function fullDeleteButton() {
-    setFullData([])
-    setMoneyAmount(0)
-    setNumberProudect(0)
-    setPrice(0)
-    setProudct('');
-    //here
-  }
-  
   async function saveData() {
     try {
       await AsyncStorage.setItem('moneyAmount', moneyAmount.toString());
@@ -226,7 +228,7 @@ function App(): React.JSX.Element {
       const savedIsArabic = await AsyncStorage.getItem('isArabic');
       const savedTotalSum = await AsyncStorage.getItem('totalSum');
       const savedPrice = await AsyncStorage.getItem('price');
-  
+      
       if (savedMoneyAmount) setMoneyAmount(Number(savedMoneyAmount));
       if (savedFullData) setFullData(JSON.parse(savedFullData));
       if (savedProudct) setProudct(savedProudct);
@@ -238,6 +240,23 @@ function App(): React.JSX.Element {
     } catch (error) {
       console.log("Error loading data:", error);
     }
+  }
+
+   async function saveInHistory() {
+    const historyStorage = await AsyncStorage.getItem('history')
+    const historyList = historyStorage ? JSON.parse(historyStorage) : []
+    const historyData:history = {
+      fullData,
+      moneyAmount,
+      numberProudcts,
+      price,
+      proudct,
+      date: new Date() 
+    }
+
+    historyList.push(historyData)
+
+    await AsyncStorage.setItem('history', JSON.stringify(historyData))
   }
 
   return (
@@ -374,6 +393,7 @@ function App(): React.JSX.Element {
                   <TouchableOpacity onPress={() => deleteCard(index)} style={styles.deleteButton}>
                     <Text style={styles.deleteButtonText}>{isArabic ? 'حذف' : 'Delete'}</Text>
                   </TouchableOpacity>
+                  
                 </View>
               )}
 
@@ -409,7 +429,8 @@ function App(): React.JSX.Element {
             [
               {
                 text: isArabic? "أحذف" : "Delete" ,
-                onPress: () => {    
+                onPress: async () => {   
+                  await saveInHistory() 
                   setFullData([])
                   setMoneyAmount(0)
                   setNumberProudect(0)
