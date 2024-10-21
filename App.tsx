@@ -21,7 +21,7 @@ type FullData = {
   multi?: number;
 };
 
-type history = {
+type History = {
   fullData : FullData[]
   moneyAmount : number
   numberProudcts : number
@@ -42,7 +42,7 @@ function App(): React.JSX.Element {
   const [isArabic, setIsArabic] = useState<boolean>(false);
   const [onlyList, setOnlyList] = useState<boolean>(false);
   const [showHistoryToggle, setShowHistoryToggle] = useState<boolean>(false);
-  const [historyData, setHistoryData] = useState<history[]>([]);
+  const [historyData, setHistoryData] = useState<History[]>([]);
 
   useEffect(() => {
     loadData();
@@ -181,12 +181,6 @@ function App(): React.JSX.Element {
     } else setOnlyList(false)
   }
 
-  function showHistory() {
-
-    if (showHistoryToggle === false) {
-      setShowHistoryToggle(true)
-    } else setShowHistoryToggle(false)
-  }
   function sanitizeNumericInput(text: string): number {
     const sanitizedText = text.replace(/[^0-9.]/g, '');
   
@@ -249,13 +243,11 @@ function App(): React.JSX.Element {
     }
   }
 
+  async function saveInHistory() {
+    const historyStorage = await AsyncStorage.getItem('history_v2')
+    const historyList: History[] = historyStorage ? JSON.parse(historyStorage) : [];
 
-
-   async function saveInHistory() {
-    const historyStorage = await AsyncStorage.getItem('history')
-    let historyList = historyStorage ? JSON.parse(historyStorage) : []
-
-    const historyPush:history = {
+    const historyPush: History = {
       fullData,
       moneyAmount,
       numberProudcts,
@@ -264,8 +256,23 @@ function App(): React.JSX.Element {
       date: new Date() 
     }
 
-    await AsyncStorage.setItem('history', JSON.stringify(historyPush))
+    console.log(historyList)
+    historyList.push(historyPush)
+    console.log(historyList)
+
+    await AsyncStorage.setItem('history_v2', JSON.stringify(historyList))
   }
+
+  async function loadHistory() {
+    const historyStorage = await AsyncStorage.getItem('history_v2');
+    const historyList: History[] = historyStorage ? JSON.parse(historyStorage) : [];
+    setHistoryData(historyList);
+  }
+  
+  const openHistoryModal = () => {
+  loadHistory();
+  setShowHistoryToggle(true);
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -279,7 +286,9 @@ function App(): React.JSX.Element {
             <MButton bg="#fff" onPress={showOnlyList}>
               <Icon name="add-circle-outline" fontFamily="MaterialIcons" color='#444' fontSize="2xl" />
             </MButton>
-            <MButton bg="#fff" onPress={showHistory}>
+            <MButton bg="#fff" onPress={() => {
+              openHistoryModal()
+            }}>
               <Icon name="add-circle-outline" fontFamily="MaterialIcons" color='#444' fontSize="2xl" />
             </MButton>
           </View>
