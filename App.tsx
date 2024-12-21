@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import React, { useEffect, useState } from 'react';
 import {
   Button,
@@ -13,6 +14,7 @@ import {
 } from 'react-native';
 import { Div, Header, Icon, Button as MButton, Modal } from 'react-native-magnus';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { v4 as uuidv4 } from 'uuid';
 
 type FullData = {
   proudct: string;
@@ -22,12 +24,14 @@ type FullData = {
 };
 
 type History = {
-  fullData : FullData[]
-  moneyAmount : number
-  numberProudcts : number
-  price : number
-  proudct :string
-  date : Date
+  id:string;
+  historyName: string,
+  fullData: FullData[];
+  moneyAmount: number;
+  numberProudcts: number;
+  price: number;
+  proudct: string;
+  date: Date;
 }
 
 function App(): React.JSX.Element {
@@ -43,7 +47,9 @@ function App(): React.JSX.Element {
   const [onlyList, setOnlyList] = useState<boolean>(false);
   const [showHistoryToggle, setShowHistoryToggle] = useState<boolean>(false);
   const [historyData, setHistoryData] = useState<History[]>([]);
-
+  const [historyId, setHistoryId] = useState<string | null>(null)
+  const [historyName, setHistoryName] = useState<string>("")
+  const [showEditHistoryNameModal, setshowEditHistoryNameModal] = useState<boolean>(false);
   useEffect(() => {
     loadData();
   }, []);
@@ -188,7 +194,7 @@ function App(): React.JSX.Element {
   
     return parseFloat(cleanText) || 0;
   }
-  
+
   const handlePriceChange = (index: number, text: string) => {
     const numericValue = sanitizeNumericInput(text);
     updateProduct(index, 'price', numericValue);
@@ -242,29 +248,51 @@ function App(): React.JSX.Element {
       console.log("Error loading data:", error);
     }
   }
+  
+  async function  editHistory () {
+    let history = historyData.map((item) => { 
+      if (item.id != historyId) return item
+      return { 
+        id: item.id,
+        historyName: item.historyName,
+        fullData,
+        moneyAmount,
+        numberProudcts,
+        price,
+        proudct,
+        date: item.date
+      }
+    })
+    await AsyncStorage.setItem('history_v3', JSON.stringify(history))
+  }
 
   async function saveInHistory() {
-    const historyStorage = await AsyncStorage.getItem('history_v2')
-    const historyList: History[] = historyStorage ? JSON.parse(historyStorage) : [];
+    if (!historyId) 
+      {
+        const historyStorage = await AsyncStorage.getItem('history_v3')
+        const historyList: History[] = historyStorage ? JSON.parse(historyStorage) : [];
+        const historyPush: History = {
+          id: uuidv4(),
+          historyName: historyName,
+          fullData,
+          moneyAmount,
+          numberProudcts,
+          price,
+          proudct,
+          date: new Date() 
+      }
 
-    const historyPush: History = {
-      fullData,
-      moneyAmount,
-      numberProudcts,
-      price,
-      proudct,
-      date: new Date() 
+      historyList.push(historyPush)
+  
+      await AsyncStorage.setItem('history_v3', JSON.stringify(historyList))
+    } else {
+      editHistory()
     }
 
-    console.log(historyList)
-    historyList.push(historyPush)
-    console.log(historyList)
-
-    await AsyncStorage.setItem('history_v2', JSON.stringify(historyList))
   }
 
   async function loadHistory() {
-    const historyStorage = await AsyncStorage.getItem('history_v2');
+    const historyStorage = await AsyncStorage.getItem('history_v3');
     const historyList: History[] = historyStorage ? JSON.parse(historyStorage) : [];
     setHistoryData(historyList);
   }
@@ -272,8 +300,30 @@ function App(): React.JSX.Element {
   const openHistoryModal = () => {
   loadHistory();
   setShowHistoryToggle(true);
-};
+  };
 
+  function restoreHistory(item:History) {
+    setHistoryId(item.id)
+    setFullData(item.fullData)
+    setProudct(item.proudct)
+    setNumberProudect(item.numberProudcts)
+    setPrice(item.price)
+    setMoneyAmount(item.moneyAmount)
+  }
+  async function deleteAll() {
+      await saveInHistory() 
+      setHistoryId(null)
+      setFullData([])
+      setMoneyAmount(0)
+      setNumberProudect(0)
+      setPrice(0)
+      setProudct('');
+  }
+  function historyNameToggle() {
+    if (showEditHistoryNameModal === false) {
+      setshowEditHistoryNameModal(true)
+    } else setshowEditHistoryNameModal(false)  } 
+  
   return (
     <SafeAreaView style={styles.container}>
       <Header
@@ -289,18 +339,41 @@ function App(): React.JSX.Element {
             <MButton bg="#fff" onPress={() => {
               openHistoryModal()
             }}>
-              <Icon name="add-circle-outline" fontFamily="MaterialIcons" color='#444' fontSize="2xl" />
+              <Icon name="history" fontFamily="MaterialIcons" color='#444' fontSize="2xl" />
             </MButton>
           </View>
         }
         suffix={
+          <View>
           <MButton bg="#fff" onPress={lang}>
             <Icon name="language" fontFamily="MaterialIcons" color='#444' fontSize="2xl" />
           </MButton>
+
+          <MButton bg="#fff" onPress={historyNameToggle}>
+              <Icon name="add" fontFamily="MaterialIcons" color='#444' fontSize="2xl" />
+            </MButton>
+          </View>
         }
       >
         {isArabic ? 'إدارة المنتجات' : 'Product Management'}
       </Header>
+
+      <Modal  
+        isVisible={showEditHistoryNameModal}
+        swipeDirection={'down'}
+        p={5}
+        onBackdropPress={() => setshowEditHistoryNameModal(false)}
+        onSwipeComplete={() => setshowEditHistoryNameModal(false)}>
+          <View>
+            <TextInput             
+            value={historyName}
+            placeholder={isArabic ? "اسم السجل" : "history Name"}
+            onChangeText={setHistoryName}
+            style={[styles.input, isArabic && styles.arabicInput]}>
+            </TextInput>
+          </View>
+      </Modal>
+
       <Modal 
         isVisible={showHistoryToggle}
         swipeDirection={'down'}
@@ -308,18 +381,22 @@ function App(): React.JSX.Element {
         onBackdropPress={() => setShowHistoryToggle(false)}
         onSwipeComplete={() => setShowHistoryToggle(false)}
       >
-        <View>
+        <View style={{ flex: 1,}}>
           <FlatList
           data={historyData}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({item}) => (
-            <View >
-            <Text>Product: {item.proudct}</Text>
-            <Text>Amount: {item.moneyAmount}</Text>
-            <Text>Number of Products: {item.numberProudcts}</Text>
-            <Text>Price: {item.price}</Text>
-            <Text>Date: {new Date(item.date).toLocaleString()}</Text>
-          </View>
+            <TouchableOpacity onPress={ async () => { 
+              await deleteAll()
+              restoreHistory(item) 
+              setShowHistoryToggle(false)
+            }}>
+              <View style={{ margin: 5, backgroundColor:"#eee", borderRadius: 5, padding: 5}} >
+              <Text style={{ color:"#000"}}>history Name: {item.historyName}</Text>
+              <Text style={{ color:"#000"}}>Amount: {item.moneyAmount}</Text>
+              <Text style={{ color:"#000"}}>Date: {new Date(item.date).toLocaleString()}</Text>
+              </View>
+          </TouchableOpacity>
           )}
           />
           </View>
@@ -404,11 +481,9 @@ function App(): React.JSX.Element {
               fontSize="4xl"  
             />
           </MButton>
-            <Div flex={1} justifyContent='center' alignItems='center' style={[styles.centeredContainer ]}>
+            <Div flex={1} style={[styles.centeredContainer ]}>
               <Text style={styles.productName}>{item.proudct}</Text>
-              <Text style={styles.productDetails}>{isArabic ? 'عدد: ' : 'Number: '} {item.numberProudcts}</Text>
-              <Text style={styles.productDetails}>{isArabic ? 'سعر: ' : 'Price: $'}{item.price}</Text>
-              <Text style={styles.productDetails}>{isArabic ? 'الإجمالي: ' : 'Total: $'}{item.multi}</Text>
+              <Text style={styles.productDetails}>{item.price} SR x {item.numberProudcts} = {item.multi} SR </Text>
 
               {tag === index && (
                 <View>
@@ -422,7 +497,7 @@ function App(): React.JSX.Element {
                       placeholder={isArabic ? "عدد المنتجات" : "Number of Products"}
                       keyboardType="numeric"
                       onChangeText={(text) => handleProductNumberChange(index, text)}
-                      style={[styles.input, isArabic && styles.arabicInput, styles.proInput]}
+                      style={[styles.input,{flex:1}, isArabic && styles.arabicInput, styles.proInput]}
                     />
                     <TouchableOpacity onPress={() => subtractedProductQuantity(index)} style={styles.incrementButton}>
                       <Text style={styles.incrementButtonText}>{isArabic ? '-1' : '-1'}</Text>
@@ -434,7 +509,7 @@ function App(): React.JSX.Element {
                     placeholder={isArabic ? "السعر" : "Price"}
                     keyboardType="numeric"
                     onChangeText={(text) => handlePriceChange(index, text)}
-                    style={[styles.input, isArabic && styles.arabicInput]}
+                    style={[styles.input, isArabic && styles.arabicInput] }
                   />
                   
                   <TouchableOpacity onPress={() => deleteCard(index)} style={styles.deleteButton}>
@@ -443,10 +518,6 @@ function App(): React.JSX.Element {
                   
                 </View>
               )}
-
-              <TouchableOpacity onPress={() => updateProduct(index, 'multi', item.price * item.numberProudcts)} style={styles.multiplyButton}>
-                <Text style={styles.multiplyButtonText}>{isArabic ? 'ضرب' : 'Multiply'}</Text>
-              </TouchableOpacity>
             </Div>
           </View>
         )}
@@ -472,18 +543,11 @@ function App(): React.JSX.Element {
           </Div>
         </Div>
         <TouchableOpacity onPress={() => {
-          Alert.alert( isArabic? "تحذير": "WARNING", isArabic? " هل أنت متأكد من رغبتك في حذف جميع البيانات المدخلة هذا الحذف تام ولا يمكن التراجع عنه ": "Are you sure you want to delete All the items ?",
+          Alert.alert( isArabic? "تحذير": "WARNING", isArabic? "سيتم حفظ جميع البيانات المدخلة في السجل  ": "all the info will be saved in the history",
             [
               {
                 text: isArabic? "أحذف" : "Delete" ,
-                onPress: async () => {   
-                  await saveInHistory() 
-                  setFullData([])
-                  setMoneyAmount(0)
-                  setNumberProudect(0)
-                  setPrice(0)
-                  setProudct('');
-                }
+                onPress: async () => { deleteAll() }
               },
               {
                 text: isArabic? "غير متأكد" : "Not sure",
@@ -538,8 +602,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     padding: 17,
-    margin: 50,
     marginVertical: 8,
+    marginHorizontal: 20,
     borderRadius: 8,
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -642,8 +706,6 @@ const styles = StyleSheet.create({
   },
   centeredContainer: {
     flex: 1,
-    alignItems: 'center',   
-    justifyContent: 'center',
   },
   proInput:{
     margin:5,
